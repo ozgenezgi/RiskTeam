@@ -1,0 +1,972 @@
+---
+title: "Crisis And Disaster Risks Around The World"
+author: "Berkay Ocak & Ezgi Özgen"
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
+output:
+  html_document:
+    df_print: paged
+  xaringan::moon_reader:
+    css:
+    - default
+    - xaringan-themer.css
+    self_contained: no
+    nature:
+      titleSlideClass:
+      - left
+      - middle
+      - my-title
+      highlightStyle: github
+      highlightLines: yes
+      countIncrementalSlides: no
+      ratio: '16:9'
+      navigation:
+        scroll: no
+  pdf_document: default
+subtitle: ''
+institute: Department of Mathematics<br/>Istanbul Technical University
+---
+
+
+# Project Team
+* Our team name is “Crisis And Disaster Risks Around The World”.
+* Below, you can find our information about our team members (name, school id, github username):
+  * Ezgi Özgen - 090180344, Ozgenezgi
+  * Berkay Ocak - 090180342, BerkayOcak9
+
+
+
+\newpage
+
+# Project Description
+## Project goal & social problem addressed
+
+When natural disasters around the world are considered, 28 of 31 natural disasters are seen as meteorological disasters. The 10 most natural disasters is:
+
+
+* Earthquakes
+* Emergency diseases (pandemic influenza)
+* Extreme heat
+* Floods and flash floods
+* Hurricanes and tropical storms
+* Landslides & debris flow
+* Tornadoes
+* Tsunamis
+* Wildfire
+* Winter and ice storms
+
+
+The causes and consequences of natural disasters can be more than one. Natural disasters can cause epidemics and infectious diseases. It delays or stops the investment plans of the state. One of the biggest effects of disasters is that they cause death, injury and disability. Natural disasters can cause trauma to people because they create a shock effect on people. Before natural disasters begin, their severity or impact may not be predicted. It can disrupt the economic order and infrastructure of the region where it occurs. The types and order of importance of natural disasters also vary from country to country. Natural disasters may not just happen spontaneously. There are also human effects. Natural disasters are a threat to the whole world because it is not clear when they will come. It is important to analyze how crisis and disaster risk has changed and where a new or worsening crisis may arise. Therefore, we wanted to draw attention by analyzing which disasters countries face and at what risk rate. In order to minimize the loss of life and property, we aimed to examine them on the basis of individual countries, determine which country is ready for which disasters, and to warn the countries against this. In addition, we aim to draw the attention of countries by comparing which country has reduced the risk rate against which disaster according to the data of last year. In addition, it is examined on the basis of Turkey, which disaster in Turkey has a risk ratio.
+
+# Data Description
+
+We got our data from the official website of the European Commission. According to the European Commission, this given meeting purpose"The INFORM Risk Index is a global, open-source risk assessment for humanitarian crises and disasters. It can support decisions about prevention, preparedness and response."We also chose this catastrophe as the foundation for and design of this modification. On the one hand, the INFORM Risk model balances two key forces: the hazard and exposure dimension, and on the other, the vulnerability and lack of coping capacity aspects. Hazard dependent factors are treated in the hazard & exposure dimension, whereas hazard independent factors are divided into two dimensions: vulnerability, which considers the strength of individuals and households in the face of a crisis, and lack of coping capacity, which considers institutional strength.
+
+# Access to data
+
+Project Data retrieved from "https://drmkc.jrc.ec.europa.eu/inform-index/INFORM-Risk/Results-and-data/moduleId/1782/id/433/controller/Admin/action/Results." We divided the sheets into a separate data file as a manipulation.
+
+# Actions Taken
+
+```{r, warning=F, message=F, echo=FALSE, include=FALSE}
+library("readr")
+library("readxl")
+library("tidyverse")
+library("tidyr")
+library("ggpubr")
+getwd()
+data <- read_xlsx("Data/INFORMRISK_2022.xlsx")
+data_Hazard_exposure <-read_xlsx("Data/Hazard&exposure.xlsx")
+data_Indıcatordata <- read_xlsx("Data/Indicatordata.xlsx")
+data_LackOfRealibilty <- read_xlsx("Data/LackOfRealibilty.xlsx")
+data_LackOfcopincapacity <- read_xlsx("Data/LackOfcopincapacity.xlsx")
+data_Regions <- read_xlsx("Data/Regions.xlsx")
+data_Vulnerability <- read_xlsx("Data/Vulnerability.xlsx")
+data_WorldRiskIndex2011_2021<-
+                read_xlsx("Data/WorldRiskIndex2011-2021_time_series.xlsx",skip = 2)
+```
+
+
+```{r, warning=F, message=F, echo=FALSE, include=FALSE}
+data_count<-data_Regions %>%
+  select("UN Geographical Region","COUNTRY") %>%
+  rename("UNGeographicalRegion" = "UN Geographical Region")
+```
+
+
+
+```{r, warning=F, message=F, echo=FALSE, include=FALSE}
+library(sf)
+worldregion<-st_read("data/World_Continents")
+worldregion<-worldregion %>%
+  rename("UNGeographicalRegion"="continent")
+
+
+```
+
+
+
+```{r, warning=F, message=F, echo=FALSE, include=FALSE}
+data_Regions2<- data_count %>% 
+  select("UNGeographicalRegion","COUNTRY")%>%
+  group_by(UNGeographicalRegion)%>%
+  summarise(count = n())
+
+deneme = merge(data_Regions2, worldregion, by="UNGeographicalRegion") 
+ 
+
+tablo<-st_as_sf(deneme)
+tablo <- tablo %>%
+    group_by(UNGeographicalRegion)%>%
+  summarise(count = n()) 
+
+st_geometry_type(tablo)
+
+```
+
+
+```{r, warning=F, message=F, echo=FALSE}
+
+library(tmap)
+
+map11 <- tablo %>% 
+          tm_shape() +
+          tm_fill(col = "count", 
+                  palette = "Spectral", 
+                  title = "country distribution by region") + 
+          tm_borders() +
+          tm_layout(title = "count of country", 
+                    title.size = 1, 
+                    title.fontface = "bold",
+                    legend.title.size = 0.6,
+                    legend.outside = TRUE)
+
+map11
+```
+
+The distribution of countries as a region is as shown in the graph. The African and Asian continents make up the majority of the countries. While earthquakes are mostly observed in Africa and Asia, Tsunami, mountain explosion and earthquake are observed in Oceania. There are earthquakes, hurricanes, floods, erosion, rock glaciers in Europe. Hurricanes, earthquakes and tsunamis are in the foreground in America. The common disaster in every continent is the earthquake.There is also a pandemic.
+
+
+```{r,, warning=F, message=F, echo=FALSE, include=FALSE}
+Risk_Data <- data %>% 
+  select("INFORM RISK","COUNTRY","LACK OF COPING CAPACITY","VULNERABILITY",
+         "HAZARD & EXPOSURE","RISK CLASS","Earthquake","Flood","Tsunami","Epidemic","Economic Dependency","Access to health care") %>%
+  rename("INFORMRISK" = "INFORM RISK",
+         "HAZARDEXPOSURE" = "HAZARD & EXPOSURE",
+         "LACKOFCOPINGCAPACITY"="LACK OF COPING CAPACITY",
+         "RISKCLASS"="RISK CLASS") %>%
+  filter(RISKCLASS== "Very High") %>%
+  mutate(id = seq(1,14)) 
+row.names(Risk_Data)[row.names(Risk_Data) == "Central African Republic"] <- "CAR"
+
+
+```
+
+
+
+In our data, the risk rate is examined in 5 categories as very low, low, medium, high and very high. The risk ratio, which is our main data, is calculated as $$ Risk = HazardExposure\frac{1}{3}* Vulnerability*\frac{1}{3}*Lack of coping capacity*\frac{1}{3} $$ as mentioned before. 
+* Exposure to earthquakes, storms, floods, drought, and sea-level rise
+* Susceptibility depending on infrastructure, food supply, and economic framework conditions
+* Coping capacities depending on governance, health care, social and material security
+* Adaptive capacities related to upcoming natural events, climate change,and other challenges.
+
+In this report, countries with a very high overall risk level will be examined. Topics such as which disasters are more likely to occur in these countries and which disasters should countries given first priority were examined and tried to be visualized.
+
+```{r, warning=F, message=F, echo=FALSE}
+analyzed_data <- data%>%
+  select("COUNTRY","INFORM RISK")%>%
+  rename("RiskRate"="INFORM RISK")%>%
+  filter(RiskRate>=6.5)%>%
+  arrange(RiskRate)
+ggplot(analyzed_data,aes(x=reorder(COUNTRY,RiskRate),y=RiskRate))+
+  geom_bar(stat="identity",
+         width=0.6, fill="red")+
+  labs(title="Risk Rates")+
+  theme_minimal()+
+  coord_flip()+
+  geom_text(aes(label=RiskRate),Color="Black",position = position_stack(vjust = 1.05))+
+  theme(
+        plot.title = element_text(hjust=0.5, size=20),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+
+```
+
+
+As can be seen, all of them are close to each other in terms of risk level, the lowest risk level is Nigeria with 6.5, while the country with the highest risk rate is Somalia with 8.8. Upon the researches made in Somalia, it has been observed that it progresses on a scale of two rainy and two dry seasons per year. Thus, when it receives a lot of precipitation, the rate of exposure to flooding is high. Climate change is one of the biggest risks.Based on the equation of the risk data, the sub-headings that create those indicators and trigger these risks or increase the possibility of being damaged by the risks were included in the examination. In Hazard Exposure, we examine natural disasters and man-made disasters as sub-titles, Food availability Score under the main title of Vulneribility, and Drinking water and Government Effectiveness under the main title of Natural Disasters total population Lack of capacity.
+
+```{r, warning=F, message=F, echo=FALSE,result ='hide',include=FALSE}
+data_Hazard_exposure <- data_Hazard_exposure %>% 
+  select("Population...95","COUNTRY","INFORM Natural Hazard","INFORM Human Hazard") %>%
+  rename("Population" = "Population...95","INFORMNaturalHazard" = "INFORM Natural Hazard",
+         "INFORMHumanHazard" = "INFORM Human Hazard") 
+data_Vulnerability <- data_Vulnerability %>% 
+  select("Food Availability Score","COUNTRY","Natural Disasters % of total pop") %>%
+  rename("FoodAvailabilityScore" = "Food Availability Score","NaturalDisastersoftotalpop" = "Natural Disasters % of total pop") 
+
+data_LackOfcopincapacity <- data_LackOfcopincapacity %>% 
+  select("Drinking water","COUNTRY","Government Effectiveness") %>%
+  rename("GovernmentEffectiveness" = "Government Effectiveness","Drinkingwater" = "Drinking water")
+```
+
+These data were calculated and used in different excel files. For this reason, it is desired to make observations on country basis and examining risk ratios by combining two data files with the sqldf command.
+
+```{r, warning=F, message=F, echo=FALSE,result ='hide',include=FALSE}
+library("sqldf")
+Hazard_Exposure <- sqldf("SELECT COUNTRY, INFORMRISK, Population, INFORMNaturalHazard, INFORMHumanHazard 
+              FROM Risk_Data
+              JOIN data_Hazard_exposure USING(COUNTRY)")
+data_Vulnerability <- sqldf("SELECT COUNTRY, INFORMRISK, FoodAvailabilityScore, NaturalDisastersoftotalpop 
+              FROM Risk_Data
+              JOIN data_Vulnerability USING(COUNTRY)")
+data_Vulnerability
+dat_LackOfcopincapacity  <- sqldf("SELECT COUNTRY, INFORMRISK, GovernmentEffectiveness, Drinkingwater  
+              FROM Risk_Data
+              JOIN data_LackOfcopincapacity USING(COUNTRY)")
+
+```
+
+Hazard Exposure is divided into Natural and Human and thus this ratio was calculated. For better understanding, these two subgroups were visualized. In addition, the probability of being affected by the disaster was tried to be explained by thinking that it could be the population level. It started with the population first, because the population ratio in the country is visualized to estimate the number of people affected by disasters, or to observe how much the man-made disaster rate is in places where the human population is high.
+
+```{r k6, warning=F, message=F, echo=FALSE,fig.height=3, fig.width=5}
+
+k6<-ggplot(Hazard_Exposure, aes(x=COUNTRY, y=Population)) +
+  geom_segment( aes(x=COUNTRY, xend=COUNTRY, y=3, yend=Population), color="skyblue") +
+  geom_point( color="blue", size=2, alpha=0.9) +
+  theme_light() +
+  coord_flip() +
+  theme(
+    axis.title.y= element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+k6<-k6+labs(y = "Populations (in Million)")
+k6
+```
+
+As can be seen from the chart, Nigeria (risk ratio 6.5) has the highest population, while the Central African Republic (risk ratio 7.8) has the lowest. When looking at natural disasters, it is thought that while human disasters are more in certain countries, natural disasters are less and vice versa, these rates may vary according to the population or many social-economic conditions may be effective. For example, human disasters are high in Afghanistan, Syria, Yemen and Somalia. Considering the population ratio of this country, Yemen has the highest population among them. Others are average values.
+
+```{r, warning=F, message=F, echo=FALSE}
+h2<-ggplot(Hazard_Exposure, aes(x = COUNTRY, y = INFORMNaturalHazard)) +
+  geom_bar(stat="identity", 
+           position="identity", 
+           fill="#9933FF") +
+  geom_hline(yintercept = 0, size = 1, colour="#333333") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.7, hjust=1))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank())+
+  labs(title="Natural Hazard")
+
+
+
+h1<-ggplot(Hazard_Exposure, aes(x = COUNTRY, y = INFORMHumanHazard)) +
+  geom_bar(stat="identity", 
+           position="identity", 
+           fill="#1380A1") +
+  geom_hline(yintercept = 0, size = 1, colour="#333333") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.7, hjust=1))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank())+
+  labs(title="Human Hazard")
+
+ggarrange(h1,h2 ,ncol = 2, nrow = 1,align = "hv",
+          common.legend = TRUE, legend = "bottom")
+
+```
+
+
+When the hazard Exposure calculated with other indicators in our main data is considered, it has been observed that some of them increased at the same rate as man-made disasters, or even more, and some decreased. The countries with the highest Natural Hazard rate are Afghanistan and Somalia, as we mentioned at the beginning, somalia is already a country affected by floods due to climate crises, when Afghanistan is investigated, it is possible to see that it is faced with disasters such as earthquakes and landslides.
+
+```{r k5, warning=F, message=F, echo=FALSE,fig.height=3, fig.width=5}
+k5<-ggplot(Risk_Data, aes(x = COUNTRY, y = HAZARDEXPOSURE)) +
+  geom_bar(stat="identity", 
+           position="identity", 
+           fill="#B983FF") +
+  geom_hline(yintercept = 0, size = 1, colour="#333333") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank())+
+  labs(title="HAZARD EXPOSURE")
+k5
+```
+
+When Hazard exposure, which is the main topic, is examined, it has been observed that this ratio of countries with large natural and man-made disasters is also large, and at the same time it has been observed that the risk ratio is at the same level.
+
+```{r k4, warning=F, message=F, echo=FALSE,fig.height=3, fig.width=5}
+
+k4<-ggplot(dat_LackOfcopincapacity, aes(x=COUNTRY, y=GovernmentEffectiveness))+
+geom_col(fill="#FFC4E1")+
+coord_flip()+
+theme_minimal()+
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank())+
+labs(x="Countries" , y="Government Effective",
+     title=" Government Effective") 
+k4
+
+```
+
+The moment of disaster is a moment of crisis and it is very important how the countries, that is, the states, can manage this moment and cope with it. This role is very important in terms of getting rid of the disaster with the least damage (material - moral). It has been tried to visualize the effective rates of states in terms of disaster preparedness policies or capacity preparation.
+When we look at the four countries affected by the disasters mentioned in the chart above, it is seen that the Yemeni state is effective, the Somalia state is effective, the Afghanistan state is moderately, the Syrian state is moderately effective but higher than the Afghanistan state.
+
+```{r k3, warning=F, message=F, echo=FALSE,fig.height=3, fig.width=5}
+
+k3<-ggplot(dat_LackOfcopincapacity, aes(x=COUNTRY, y=Drinkingwater))+
+geom_col(fill="#FF87CA")+
+coord_flip()+
+theme_minimal()+
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank())+
+labs(title=" Drinking Water")
+k3
+  
+```
+
+Water is the most important source of life for humanity. Emotions such as panic, excitement, fear experienced at the time of a disaster increase the need for water, or the need for reproduction of many products (areas such as fields) are affected. Or the scarcity of water in the first place creates a human-based disaster. The decrease in the amount of water per capita can cause panic in people, while it can lead to fights, turmoil and man-made disasters. Therefore, the water ratios of countries with high risk levels were examined.
+The scarcity of water in Syria and Iraq is at a remarkable rate. 
+Since Syria is a country open to risks based on our previous studies, scarcity of water can lead to many negative situations. In the measures that can be taken, the state should play an effective role and develop a solution to water scarcity. 
+
+```{r k2, warning=F, message=F, echo=FALSE,fig.height=3, fig.width=5}
+k2<-ggplot(Risk_Data, aes(x = COUNTRY, y = LACKOFCOPINGCAPACITY)) +
+  geom_bar(stat="identity", 
+           position="identity", 
+           fill="#B983FF") +
+  geom_hline(yintercept = 0, size = 1, colour="#333333") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.7, hjust=1))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank())+
+  labs(title="Lack of capacity")
+k2
+```
+
+When we examine the main title under these sub-headings, Syria stands out again in countries with insufficient capacity, but its rates are not very high in other countries.Syria has insufficient capacity and needs to seek solutions for this situation. Insufficient capacity at the time of disaster can create a difficult situation for people.
+
+```{r k1, warning=F, message=F, echo=FALSE,fig.height=3, fig.width=5}
+k1<- ggplot(data_Vulnerability, aes(x=COUNTRY, y=FoodAvailabilityScore))+
+geom_col(fill="#064663")+
+coord_flip()+
+theme_minimal()+
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank())+
+labs(x="Countries" , y="food availability",
+     title="FOOD AVAILABILITY SCORE")
+k1
+```
+
+In addition to the lack of water, another important source of life for humans is the availability of food. It is seen that Mali has a shortage of food resources and the country with the most food is Somalia. The fact that events such as hunger and famine in Africa have been on the agenda for years is an event that should be evaluated in terms of the whole world.
+
+```{r k8, warning=F, message=F, echo=FALSE,fig.height=3, fig.width=5.5}
+k8<-ggplot(data_Vulnerability, aes(x=COUNTRY, y=NaturalDisastersoftotalpop))+
+geom_col(fill="#ECB365")+
+coord_flip()+
+theme_minimal()+
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank())+
+labs(title="Natural Disasters of total population of country")
+k8
+```
+
+When examined in terms of vulnerability, the human population affected by disasters was examined, since the subject was human. The country with the lowest overall rate in terms of population, but where people are most affected, is somalia. It is thought that somalia, which poses a high risk in terms of risk ratio and risk area, will present a study proposal to reduce the vulnerability of people. 
+It is thought that the high level of state influence in Somalia can be resolved in terms of state resources. 
+
+```{r k7, warning=F, message=F, echo=FALSE,fig.height=3, fig.width=5}
+k7<-ggplot(Risk_Data, aes(x = COUNTRY, y = VULNERABILITY)) +
+  geom_bar(stat="identity", 
+           position="identity", 
+           fill="#041C32") +
+  geom_hline(yintercept = 0, size = 1, colour="#333333") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.7, hjust=1))+
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"),
+        axis.title.y=element_blank(),
+        axis.title.x=element_blank())+
+  labs(title="Vulnerability")
+k7
+```
+
+When the main topic of the food availability score and natural disaster of total population is vulnerability, it is understood that the countries are competent in this subject. It is observed that only three countries are low but balanced when compared to other indicators.
+
+
+
+
+
+```{r, warning=F, message=F, echo=FALSE}
+subset_data <- data%>%
+  select("COUNTRY","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  filter(COUNTRY=="Mozambique")
+RiskRates<-c(subset_data["Earthquake"],subset_data["Flood"],subset_data["Tsunami"],
+             subset_data["Epidemic"],subset_data["Access to health care"],subset_data["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df<-data.frame(row.names =(1:6))
+df$Disasters=rwnm
+df$RiskRates=as.numeric(RiskRates)
+p1<-ggplot(df,aes(x=Disasters,y=RiskRates))+
+  geom_bar(stat="identity",
+         width=0.3, fill="#B91646")+
+  labs(title="Mozambique")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust=0.5, size=10),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+
+subset_data <- data%>%
+  select("COUNTRY","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  filter(COUNTRY=="Niger")
+RiskRates<-c(subset_data["Earthquake"],subset_data["Flood"],subset_data["Tsunami"],
+             subset_data["Epidemic"],subset_data["Access to health care"],subset_data["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df<-data.frame(row.names =(1:6))
+df$Disasters=rwnm
+df$RiskRates=as.numeric(RiskRates)
+p2<-ggplot(df,aes(x=Disasters,y=RiskRates))+
+  geom_bar(stat="identity",
+         width=0.3, fill="#864879")+
+  labs(title="Niger")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust=0.5, size=10),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+
+subset_data <- data%>%
+  select("COUNTRY","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  filter(COUNTRY=="Nigeria")
+RiskRates<-c(subset_data["Earthquake"],subset_data["Flood"],subset_data["Tsunami"],
+             subset_data["Epidemic"],subset_data["Access to health care"],subset_data["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df<-data.frame(row.names =(1:6))
+df$Disasters=rwnm
+df$RiskRates=as.numeric(RiskRates)
+p3<-ggplot(df,aes(x=Disasters,y=RiskRates))+
+  geom_bar(stat="identity",
+         width=0.3, fill="#6B4F4F")+
+  labs(title="Nigeria")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust=0.5, size=10),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+
+subset_data <- data%>%
+  select("COUNTRY","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  filter(COUNTRY=="Ethiopia")
+RiskRates<-c(subset_data["Earthquake"],subset_data["Flood"],subset_data["Tsunami"],
+             subset_data["Epidemic"],subset_data["Access to health care"],subset_data["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df<-data.frame(row.names =(1:6))
+df$Disasters=rwnm
+df$RiskRates=as.numeric(RiskRates)
+p4<-ggplot(df,aes(x=Disasters,y=RiskRates))+
+  geom_bar(stat="identity",
+         width=0.3, fill="#C37B89")+
+  labs(title="Ethiopia")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust=0.5, size=10),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+
+subset_data <- data%>%
+  select("COUNTRY","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  filter(COUNTRY=="Iraq")
+RiskRates<-c(subset_data["Earthquake"],subset_data["Flood"],subset_data["Tsunami"],
+             subset_data["Epidemic"],subset_data["Access to health care"],subset_data["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df<-data.frame(row.names =(1:6))
+df$Disasters=rwnm
+df$RiskRates=as.numeric(RiskRates)
+p5<-ggplot(df,aes(x=Disasters,y=RiskRates))+
+  geom_bar(stat="identity",
+         width=0.3, fill="#6D9886")+
+  labs(title="Iraq")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust=0.5, size=10),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+
+subset_data <- data%>%
+  select("COUNTRY","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  filter(COUNTRY=="Syria")
+RiskRates<-c(subset_data["Earthquake"],subset_data["Flood"],subset_data["Tsunami"],
+             subset_data["Epidemic"],subset_data["Access to health care"],subset_data["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df<-data.frame(row.names =(1:6))
+df$Disasters=rwnm
+df$RiskRates=as.numeric(RiskRates)
+p6<-ggplot(df,aes(x=Disasters,y=RiskRates))+
+  geom_bar(stat="identity",
+         width=0.3, fill="#150050")+
+  labs(title="Syria")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust=0.5, size=10),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+
+subset_data <- data%>%
+  select("COUNTRY","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  filter(COUNTRY=="Mali")
+RiskRates<-c(subset_data["Earthquake"],subset_data["Flood"],subset_data["Tsunami"],
+             subset_data["Epidemic"],subset_data["Access to health care"],subset_data["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df<-data.frame(row.names =(1:6))
+df$Disasters=rwnm
+df$RiskRates=as.numeric(RiskRates)
+p7<-ggplot(df,aes(x=Disasters,y=RiskRates))+
+  geom_bar(stat="identity",
+         width=0.3, fill="#5E454B")+
+  labs(title="Mali")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust=0.5, size=10),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+
+ggarrange(p1,p2,p3,p4 ,ncol = 2, nrow = 2,align = "hv",
+          common.legend = TRUE, legend = "bottom")
+ggarrange(p5,p6,p7 ,ncol = 2, nrow = 2,align = "hv",
+          common.legend = TRUE, legend = "bottom")
+
+```
+
+# Examining the Mozambique chart
+* Mozambique's inform risk increases by 7.2 percent. When we examine this graph, we can see that the risk scale is most affected by 4 events. It is observed from the graph that any epidemic can be caught very quickly and problems can arise due to limited health access. These two events are interrelated. The fact that the epidemic is a separate risk of accessing separate health conditions creates a danger. Because the thing that people need the most in an epidemic is care. In this respect, a precautionary disease plan is required. When we examine other disasters, tsunami and flood stand out. Mozambique is in the African continent. The country, which is dangerous for tsunami, should be calculated such as the arrival time for the tsunami, how big it can be, and how to take precautions in case of a disaster. As a result of the floods and hurricanes that broke out in 2019, Mozambique has suffered both material and moral damage. The risk of flooding is still very high within the 2021-2022 rate. Flood precautions should be taken and people should be made aware of what to do in case of flood. The risk of tsunamis is also high. People need to be made aware of the tsunami. Protection from the tsunami is simply going to places far from the shore, away from the water and keeping people in contact with each other.
+
+# Examining the Niger chart
+* When we examine it in terms of Niger, it has very little risk in terms of earthquakes and none in terms of tsunami. However, the risk rate is very high in cases such as access to health, epidemic, flood. Access to health is crucial for injury situations when a disaster occurs. Niger has a high population, which wanders at a rate of 6-7 as a population. It is necessary to take precautions in terms of access to health care for such a large population. The risk of an epidemic is also very large. In order to prevent the epidemic, certain projects and awareness raising should be done. otherwise it can lead to very large deaths. This country, which is suitable for flooding, last experienced this disaster in 2021, and a total of 105,690 people were affected. One of the reasons for this disaster is that there is no green area to keep water in the country, the state should find the deficiencies and take precautions.
+
+# Examining the Nigeria chart
+* When we examine Nigeria, it has the same disaster situations as Niger, but the difference epidemic rate is lower than the flood rate. Nigeria was affected by the 2021 flood event, but due to insufficient records and reporting, the rate of material/moral loss could not be determined. We can prevent floods by making the right planning and providing the necessary infrastructure conditions. There is no flood management policy in this flood-friendly country. The lack of relevant legal and policy frameworks is an indication of the low emphasis placed on flood control and management in Nigeria. The effect of the state observed in the government effect graph analyzed above was low. It is thought that an urgent action should be taken in this regard.
+
+# Examining the Ethiopia chart
+* Ethiopia has a high risk of epidemics and access to health. These issues trigger each other. When infected with an epidemic disease, it should be treated immediately so that it does not spread. This requires access to treatment. The risk of flooding is also high. Studies are needed in order to raise awareness of the state and to establish structures in suitable places. There is no tsunami risk. In terms of earthquake, it is necessary to seek solutions for things to be done in the event of an earthquake and again for building construction.
+
+# Examining the Iraq chart
+* It is striking that the risk of flooding is very high in Iraq. Measures should be taken and warnings should be given about raising the state and people's awareness and shaping the construction accordingly.
+
+# Examining the Syria chart
+* When we look at Syria, we observe that the rate of economic independence is at a high level. Syria has had problems with independence in recent years. Being in a state of civil war creates big problems in terms of economy. Earthquake, flood, tsunami, pandemic risks are also high. The highest among them is earthquake.
+
+# Examining the Mali chart
+* The first thing that stands out in Mali is access to health. Access to health is an important condition not only during natural disasters but also throughout normal life. Making regulations in this regard will make a safe and livable environment for people in Mali.
+
+```{r, warning=F, message=F, echo=FALSE}
+subset_data1 <- data%>%
+  select("COUNTRY","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  filter(COUNTRY=="Congo DR")
+RiskRates<-c(subset_data1["Earthquake"],subset_data1["Flood"],subset_data1["Tsunami"],
+             subset_data1["Epidemic"],subset_data1["Access to health care"],subset_data1["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df8<-data.frame(row.names =(1:6))
+df8$Disasters=rwnm
+df8$RiskRates=as.numeric(RiskRates)
+p8<-ggplot(df8,aes(x=Disasters,y=RiskRates))+
+  geom_bar(stat="identity",
+         width=0.3, fill="orange")+
+  labs(title="Congo DR")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust=0.5, size=5),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+
+subset_data2 <- data%>%
+  select("COUNTRY","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  filter(COUNTRY=="Central African Republic")
+RiskRates<-c(subset_data2["Earthquake"],subset_data2["Flood"],subset_data2["Tsunami"],
+             subset_data2["Epidemic"],subset_data2["Access to health care"],
+             subset_data2["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df9<-data.frame(row.names =(1:6))
+df9$Disasters=rwnm
+df9$RiskRates=as.numeric(RiskRates)
+p9<-ggplot(df9,aes(x=Disasters,y=RiskRates))+
+  geom_segment( aes(x=reorder(Disasters,RiskRates) ,xend=Disasters, y=0, yend=RiskRates), color="orange")+
+  geom_point(size=1, color="hotpink") +
+  coord_flip() +
+  labs(title="Central African Republic")+
+  theme_minimal()+
+  theme(
+    plot.title = element_text(hjust=0.5, size=5),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    legend.position="none",
+    axis.title.x =element_blank(),
+    axis.title.y=element_blank())
+
+subset_data3 <- data%>%
+  select("COUNTRY","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  filter(COUNTRY=="Chad")
+RiskRates<-c(subset_data3["Earthquake"],subset_data3["Flood"],subset_data3["Tsunami"],
+             subset_data3["Epidemic"],subset_data3["Access to health care"],
+             subset_data3["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df10<-data.frame(row.names =(1:6))
+df10$Disasters=rwnm
+df10$RiskRates=as.numeric(RiskRates)
+p10<-ggplot(df10,aes(x=Disasters,y=RiskRates))+
+  geom_bar(stat="identity",
+         width=0.3, fill="chartreuse3")+
+  labs(title="Chad")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust=0.5, size=5),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+subset_data4 <- data%>%
+  select("COUNTRY","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  filter(COUNTRY=="Afghanistan")
+RiskRates<-c(subset_data4["Earthquake"],subset_data4["Flood"],subset_data4["Tsunami"],
+             subset_data4["Epidemic"],subset_data4["Access to health care"],
+             subset_data4["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df11<-data.frame(row.names =(1:6))
+df11$Disasters=rwnm
+df11$RiskRates=as.numeric(RiskRates)
+p11<-ggplot(df11,aes(x=Disasters,y=RiskRates))+
+  geom_segment( aes(x=reorder(Disasters,-RiskRates) ,xend=Disasters, y=0, yend=RiskRates)
+                ,color="darkslategray1")+
+  geom_point(size=1, color="darkred") +
+  coord_flip() +
+  labs(title="Afghanistan")+
+  theme_minimal()+
+  theme(
+    plot.title = element_text(hjust=0.5, size=5),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    legend.position="none",
+    axis.title.x =element_blank(),
+    axis.title.y=element_blank())
+subset_data5 <- data%>%
+  select("COUNTRY","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  filter(COUNTRY=="Yemen")
+RiskRates<-c(subset_data5["Earthquake"],subset_data5["Flood"],subset_data5["Tsunami"],
+             subset_data5["Epidemic"],subset_data5["Access to health care"],
+             subset_data5["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df12<-data.frame(row.names =(1:6))
+df12$Disasters=rwnm
+df12$RiskRates=as.numeric(RiskRates)
+p12<-ggplot(df12,aes(x=Disasters,y=RiskRates))+
+  geom_bar(stat="identity",
+         width=0.3, fill="purple")+
+  labs(title="Yemen")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust=0.5, size=5),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+subset_data6 <- data%>%
+  select("COUNTRY","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  filter(COUNTRY=="South Sudan")
+RiskRates<-c(subset_data6["Earthquake"],subset_data6["Flood"],subset_data6["Tsunami"],
+             subset_data6["Epidemic"],subset_data6["Access to health care"],
+             subset_data6["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df13<-data.frame(row.names =(1:6))
+df13$Disasters=rwnm
+df13$RiskRates=as.numeric(RiskRates)
+p13<-ggplot(df13,aes(x=Disasters,y=RiskRates))+
+  geom_segment( aes(x=reorder(Disasters,RiskRates) ,xend=Disasters, y=0, yend=RiskRates)
+                ,color="cadetblue1")+
+  geom_point(size=1, color="mediumorchid4") +
+  coord_flip() +
+  labs(title="South Sudan")+
+  theme_minimal()+
+  theme(
+    plot.title = element_text(hjust=0.5, size=5),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    legend.position="none",
+    axis.title.x =element_blank(),
+    axis.title.y=element_blank())
+subset_data7 <- data%>%
+  select("COUNTRY","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  filter(COUNTRY=="Somalia")
+RiskRates<-c(subset_data7["Earthquake"],subset_data7["Flood"],subset_data7["Tsunami"],
+             subset_data7["Epidemic"],subset_data7["Access to health care"],
+             subset_data7["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df14<-data.frame(row.names =(1:6))
+df14$Disasters=rwnm
+df14$RiskRates=as.numeric(RiskRates)
+p14<-ggplot(df14,aes(x=Disasters,y=RiskRates))+
+  geom_bar(stat="identity",
+         width=0.3, fill="dodgerblue4")+
+  labs(title="Somalia")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust=0.5, size=5),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+ggarrange(p8,p9,p10,p11,ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "bottom",hjust=-0.8)
+ggarrange(p12,p13,p14 ,ncol = 2, nrow = 2,
+          common.legend = TRUE, legend = "bottom",hjust=-0.8)
+```
+
+# Examining the Congo DR chart
+* Looking at the graph of Congo DR, two of the most important reasons for its high risk are the epidemic and the problem of not being able to access treatment. Since these two problems are complementary to each other, an immediate action should be taken against them, because if the people living in Congo at the beginning of the epidemic cannot reach treatment as soon as possible, the epidemic cannot be prevented. Faced with such a situation, it is inevitable that the number of deaths will increase drastically. Although these two risks stand out for Congo DR, unfortunately the risk of flooding is also quite high. For this reason, measures should be taken against the risk of flooding, by giving priority to the epidemic and access to treatment issues. In addition, the low risk of earthquake and economic dependency and the absence of tsunami risk are a good sign for Congo DR.
+
+# Examining the Central African Republic chart
+* The risk situation in the Central African Republic (CAR) is almost the same as in Congo DR. It is observed that only three countries are low but balanced when compared to other indicators. But in addition to these risks, the economic dependency risk of the Central African Republic is at a level that cannot be ignored.
+
+# Examining the Chad chart 
+* When we look at the graph of Chad, it is possible to see that risks such as inaccessibility to treatment, floods and epidemics come to the forefront compared to other risks. Although a frightening scenario may arise, as Chad has high risks of not being able to access treatment and an epidemic, this scenario can be avoided once the necessary precautions are taken in time. Low earthquake risk and no tsunami risk is good news for Chad. 
+
+# Examining the Afghanistan chart
+* When the graph of Afghanistan is examined, the first detail that catches the eye is that the earthquake risk is frighteningly high. Such a high risk ratio is an indication that a major earthquake can come at any time. Therefore, the first action to be taken without wasting any time is the earthquake. When we examine other risks, unfortunately, there is no situation that is very different from an earthquake. The high risk of not being able to access treatment is also very dangerous for a possible disaster situation. Although the risks of flood and epidemic are not as high as earthquakes, they have a risk level that cannot be underestimated. Therefore, after the earthquake and inability to access treatment, measures should be taken for floods and epidemics. The absence of a tsunami risk is the only good news for Afghanistan.
+
+# Examining the Yemen chart
+* When Yemen's risk graph is interpreted, it can be said that the risks of economic dependency, epidemic and inability to access treatment are quite high. While these 3 risks are scary even when they are high individually, high levels of all of them together can have undesirable results. The risk of not being able to access treatment during an epidemic may result in the deaths of people, and assuming that access to treatment is provided, it is obvious that situations such as the state not being able to buy drugs may occur when economic difficulties are involved. Therefore, the fact that these 3 risks are high at the same time poses a great threat to the people living in Yemen. Efforts to reduce these risks should be the first priority of the state. When we look at flood, tsunami and earthquake risks, there are risks of realization, although they are not very high.
+
+# Examining the South Sudan chart
+* When the risk graph of South Sudan is analyzed, it is seen that the economic dependency is at the highest level. In the event of a disaster, the economic situation of the country is very important because aid to the disaster area requires a certain economic power. Therefore, South Sudan's first aim should be to reduce this risk. In addition, the risk of not being able to access treatment is very high. When these two risks are combined, they can create serious health problems. These risks are followed by epidemic and flood risks. Although the risks of economic dependency and inability to access treatment are not as high, they are at a high level. These are the biggest factors in South Sudan having the 2nd highest risk ratio.
+
+# Examining the Somalia chart
+* Looking at the risk graph of Somalia, it is possible to say that all risks are quite high, except for the earthquake, which is already the highest risk country examined. The highest risk situation is the risk of not being able to access treatment. The fact that this risk is high poses a great threat to the people living in Somalia both in their daily lives and in disaster situations. Therefore, the first problem to be solved is the problem of not being able to access treatment. This risk is followed by economic dependency. The poor economy may face situations such as the Somali state's inability to find the strength to help the victims in disaster situations. Measures to be taken for disasters such as floods and tsunamis should follow the efforts to reduce these two risks.
+
+
+
+Compared last year's data with this year's forecast data. However, since our data containing last year's data was not clean, the skip command was used first when defining other data. Then, since the column names were not correct, the necessary columns were taken and named. Vulnerability, Hazard & Exposure, Lack of capacity risk ratios are expressed over the percentile. In the existing data, our risk ratios were evaluated out of 50. was not suitable for comparison. However, starting from the equation mentioned at the beginning, the risk ratios in the column were recalculated based on last year's indicators (Vulnerability, Hazard & Exposure, Lack of capacity).
+
+```{r,  warning=F, message=F, echo=FALSE}
+
+data_OldRisk<-data_WorldRiskIndex2011_2021%>% 
+  select("...1","2021...13","2021...36","2021...59","2021...128")%>%
+  rename("COUNTRY" = "...1")%>%
+  rename("RiskValue" = "2021...13")%>%
+  rename("HazardExposure" = "2021...36")%>%
+  rename("Vulnerability" = "2021...59")%>%
+  rename("LackOfCapacity" = "2021...128")%>%
+  filter(COUNTRY %in% c("Somalia","South Sudan", "Yemen", "Afghanistan","Chad", "Central African Republic", "Congo DR", "Niger","Mozambique","Syria","Mali", "Ethiopia", "Iraq","Nigeria"))
+
+data_OldRisk$HazardExposure = (data_OldRisk$HazardExposure*5/10)
+data_OldRisk$Vulnerability = (data_OldRisk$Vulnerability/10)
+data_OldRisk$LackOfCapacity = (data_OldRisk$LackOfCapacity/10)
+data_OldRisk$RiskValue = round((data_OldRisk$LackOfCapacity*(1/3)+data_OldRisk$Vulnerability*(1/3)+data_OldRisk$HazardExposure*(1/3)),1)
+
+
+knitr::kable(Risk_Data[,1:5],"pipe",col.names = c("InformRisk",
+                           "Country",
+                           "lackOfCapacity",
+                           "Vulnerability",
+                           "HazardExposure"),caption = "2022 Inform Risk Data") 
+knitr::kable(data_OldRisk[,1:5],"pipe",caption = "2021 Inform Risk Data ")           
+```
+
+
+
+
+The two tables above contain separately 2022 and 2021 data. Visualization has been made to draw attention to the separations visually. Visualized graphs of 2021 according to Risk Rate, vulnerability, lack of capacity, hazard Exposure data are given below.
+
+
+```{r,warning=F, message=F, echo=FALSE, fig.height=5, fig.width=8}
+p0<-ggplot(data_OldRisk, aes(x = COUNTRY, y = RiskValue)) +
+    geom_bar(stat="identity",
+         width=0.8, fill="#655D8A")+
+  theme_minimal()+
+  coord_flip()+
+  geom_text(aes(label=RiskValue),Color="Black",position = position_stack(vjust = 0.8))+
+  theme(
+        plot.title = element_text(hjust=0.5, size=10),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())+
+  ggtitle("Risk value 2021")
+p<-ggplot(data_OldRisk, aes(x = COUNTRY, y = HazardExposure)) +
+    geom_bar(stat="identity",
+         width=0.8, fill="#655D8A")+
+  theme_minimal()+
+  coord_flip()+
+  geom_text(aes(label=HazardExposure),Color="Black",position = position_stack(vjust = 0.8))+
+  theme(
+        plot.title = element_text(hjust=0.5, size=10),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())+
+  ggtitle("Hazard Exposure 2021")
+
+p2<-ggplot(data_OldRisk, aes(x = COUNTRY, y = Vulnerability)) +
+    geom_bar(stat="identity",
+         width=0.8, fill="#D885A3")+
+  theme_minimal()+
+  coord_flip()+
+  geom_text(aes(label=Vulnerability),Color="Black",position = position_stack(vjust = 0.8))+
+  theme(
+        plot.title = element_text(hjust=0.5, size=10),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())+
+  ggtitle("Vulnerability 2021")
+p3<-ggplot(data_OldRisk, aes(x = COUNTRY, y = LackOfCapacity)) +
+    geom_bar(stat="identity",
+         width=0.8, fill="#9C0F48")+
+  theme_minimal()+
+  coord_flip()+
+  geom_text(aes(label=LackOfCapacity),Color="Black",position = position_stack(vjust = 0.8))+
+  theme(
+        plot.title = element_text(hjust=0.5, size=10),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())+
+  ggtitle("Lack Of capacity 2021")
+ggarrange(p0,p,p2,p3 ,ncol = 2, nrow = 2,align = "hv",
+          common.legend = TRUE, legend = "bottom")
+```
+
+Syria, South Sudan, Somalia Congo DR are not included in the data in 2021. If a comparison is made with the ones included in Afghanistan, the risk ratio increased from 7.3 in 2021 to 8.2 in 2022, and this increase is thought to be due to the Vulnerability risk and hazard exposure risk ratio when other data are compared. Vulnerability says that a population exposed to risk will have a greater impact, and that hazard exposure risk can have a physical impact on humans. Therefore, measures should be developed on the basis of this issue. Central African Republic increased from 7.2 to 7.8. Not a remarkable increase, but the reason for this increase may be the hazard Exposure risk ratio. Chad fell 7.9' from 8.2, an indication that it was affected by the events of last year and measures were taken. Ethiopia showed a decrease from 7.1 to 6.8. Hazard Exposure risk and lack of capacity risk ratio has decreased significantly for 2022. Iraq showed an increase from 6.5 to 6.6. The reason for this little change is that while the other indacors decreased, the hazard exposure risk ratio increased. Mali decreased from -7.8 to 7.2. There has been a significant decrease in hazard exposure risk and lack of capacity risk ratios. Mozambique showed a decrease from 7.4 to 7.2. Lack of capacity risk ratio has decreased significantly. The Niger reduced the Lack of capacity risk, vulnerability risk and hazard exposure risk ratios by decreasing from 8.5 to 7.4. Based on the flood disaster that took place in Niger in 2021, it can be deduced that it has improved in coping with the disaster. Nigeria showed a significant decrease of 6.5 from 8.4. It has achieved a significant decrease in all indicars. Finally, when Yemen is examined, it has made a warning from 6.8 to 8.2. Although the risk ratio of the lack of capacity has decreased, the hazard exposure and vulnerability risk ratios have increased to a precautionary level.
+
+
+
+As we mentioned at the beginning of the project, we stated that we would create the Turkey chart after creating the charts for the countries above a certain risk level. We will compare Turkey's risky disasters with other countries.
+
+
+
+```{r, warning=F, message=F, echo=FALSE}
+turkey<-data%>%
+  select("COUNTRY","INFORM RISK","Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")%>%
+  rename("Risk Rate"="INFORM RISK")%>%
+  filter(COUNTRY=="Turkey")
+RiskRates<-c(turkey["Earthquake"],turkey["Flood"],turkey["Tsunami"],
+             turkey["Epidemic"],turkey["Access to health care"],turkey["Economic Dependency"])
+rwnm=c("Earthquake","Flood","Tsunami","Epidemic","Access to health care","Economic Dependency")
+df<-data.frame(row.names =(1:6))
+df$Disasters=rwnm
+df$RiskRates=as.numeric(RiskRates)
+trpl<-ggplot(df,aes(x=Disasters,y=RiskRates))+
+  geom_bar(stat="identity",
+         width=0.3, fill="brown1")+
+  labs(title="Turkey")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust=0.5, size=10),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+trpl
+
+```
+
+When we consider Turkey, we see that the overall risk ratio is 4.9. This ratio corresponds to the medium class as the risk class. This is good news for Turkey. However, when we look at the risk ratios specifically, we see that the earthquake risk is very high. Turkey's first priority should be to aim to minimize the damage by taking the necessary precautions against earthquakes. Because the earthquake risk is so high, it shows that a big earthquake can come at any time. 
+
+```{r,warning=F, message=F, echo=FALSE}
+data_earth<-data%>%
+            select("COUNTRY","INFORM RISK","Earthquake")%>%
+            rename("RiskRate"="INFORM RISK")%>%
+            filter(RiskRate>=6.5 | COUNTRY=="Turkey" )%>%
+            arrange(Earthquake)
+ggplot(data_earth,aes(x=reorder(COUNTRY,Earthquake),y=Earthquake))+
+  geom_bar(stat="identity",
+         width=0.6, fill="brown")+
+  labs(title="Earthquake Risk of Countries")+
+  theme_minimal()+
+  coord_flip()+
+  theme(
+        plot.title = element_text(hjust=0.5, size=20),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+```
+
+
+
+The seriousness of the situation can be understood from the fact that Turkey ranks first, even when compared to the highest risk countries. 
+
+The biggest risk after the earthquake in Turkey is the tsunami. Although Turkey is known as an earthquake zone, the threat posed by a tsunami is at a level that cannot be ignored. The probability of a tsunami occurring after the earthquake is also very high. Therefore, taking the necessary precautions for the tsunami will prevent many loss of life and property.
+
+
+
+
+```{r, warning=F, message=F, echo=FALSE}
+data_earth<-data%>%
+            select("COUNTRY","INFORM RISK","Tsunami")%>%
+            rename("RiskRate"="INFORM RISK")%>%
+            filter(RiskRate>=6.5 | COUNTRY=="Turkey" )%>%
+            arrange(Tsunami)
+ggplot(data_earth,aes(x=reorder(COUNTRY,Tsunami),y=Tsunami))+
+  geom_bar(stat="identity",
+         width=0.6, fill="#7897AB")+
+  labs(title="Tsunami Risk of Countries")+
+  theme_minimal()+
+  coord_flip()+
+  theme(
+        plot.title = element_text(hjust=0.5, size=20),
+        axis.text.x=element_text(hjust = 0, angle=90),
+        axis.title.x =element_blank(),
+        axis.title.y=element_blank(),
+        axis.line=element_blank())
+```
+
+
+
+
+Turkey is an earthquake zone. The ratio and comparison can be seen in the chart above. Earthquake carries the risk of realizing a tsunami as well as its own effects. The tsunami is caused by the shifting of the energy on the ground as a result of the movements. There are more than 90 recorded tsunami data in Turkey. It has been observed regionally in the Aegean Sea, the Marmara Sea and the Mediterranean Sea. No loss or damage has been reported yet. But it needs to be taken seriously. For example, as a result of the researches carried out a few days after the earthquake of 17 August 1999, it was seen that the sea retreated before the earthquake and then rose by creating tsunami waves. Since Turkey is an earthquake country and a big earthquake is expected in the Istanbul region in the coming years, awareness should be raised in terms of tsunami and people should be warned with certain precautions.
+
+
+# Results
+In our project, data was visualized with various graphic types to reach the result. First, the countries in our data were grouped on the basis of which continent and shown on a world map. In this way, by understanding the natural disasters in the continents, he provided a better understanding of the countries. It was thought that it would be good in terms of warning-precaution to include high-risk countries in the study. In the first part, it was stated that the risk ratio is divided into three as Lack of capacity, hazard-exposure, vulnerability. When viewed on the basis of Hazard-exposure, it is divided into two: population and human/natural disaster. A line chart containing the population was made. Based on the population, it was interpreted how many people would be affected by disasters in countries. Before looking at the disaster basis, the general risk ratios were examined to see how the disasters, which are divided into human and natural, affect the countries. In general, hazard-exposure was examined and a bar plot was used for this. Secondly, it was divided into two in terms of Lack of capacity. Government Effective and drinking water. These two separations were analyzed with a bar plot. Lack of capacity was viewed in general. Food availability score and natural disasters of total population of country rates were analyzed in terms of vulnerability. Plotted with the general vulnerability bar plot for more precise information. Each country was graphically analyzed in terms of Access to health care, Earthquake, Economic depency, epidemic, flood, tsunami as man-made and natural disasters. In order to observe the development of these countries and the calculated data, a comparison was made with the risk data in 2021 and interpreted graphically as a table. Lastly, Turkey's earthquake and tsunami comparison and risk ratios were charted.
+
+
+# Discussion 
+At the beginning of the project, it was planned to discuss by giving a warning/precaution according to the risks of the countries and the ratios given when calculating this risk. As a result of the investigations, we will convey our views, the protection, warning and precautionary information we have obtained, such as how much damage will be affected on the basis of disasters. The discussion and recommendations given are based more on the observed results than the research and the information and opinions gained in this project.
+Natural disasters usually occur spontaneously, but can also be touched by human hands. People can reduce the effects of disasters by taking precautions. The risk ratios of the countries we research are very important. Countries with high risk levels should always be prepared. As we mentioned in the study, certain researches and solution suggestions are presented from the continuous Niger flood disaster. Compared to previous years, it has improved in taking action. In a study, certain strategies were suggested in terms of flooding [1].
+Methods of earthquake protection are also emphasized by experts. Earthquakes are caused by the movements of the earth's crust and are inevitable. Afghanistan is the country most affected by the earthquake in our research. The most recent earthquake occurred on January 24, 2022, with a magnitude of 5. In this respect, it is necessary to raise awareness of people and develop houses and living spaces at a sufficient material level. If there is a coast after the earthquake, the probability of a tsunami is very high. Tsunami is an inevitable disaster. Its measure is to raise awareness and escape to heights.
+
+Our project can be studied by making a full detailed comparison with previous data. In addition, it can be diversified by making more detailed research on the basis of the desired country.
+
+# Conculusion
+
+As a result of all visualizations and examinations, we examined the conditions such as side effects, lack of water, lack of food, effective government, and high rate of population affected by the disaster in countries with Very high risk level. Managing these side effects in the event of a disaster, having the capacity and taking additional precautions ensure better preparedness when a disaster occurs. The absence of these side factors can create a fight and turmoil among people, which can lead to a man-made disaster, internal / external war. Disasters, violence and armed conflicts: every year destroyed livelihoods force millions of people worldwide to flee their homes. When analyzed on a country basis, 6 countries are at risk of tsunami, 14 countries are at risk of flooding, and several of them have experienced this disaster this year, with a lot of loss of life and property, 14 countries are at risk for epidemics (today's corona epidemic example), 9 countries are at risk of earthquakes, but When the flood and tsunami are considered, it is observed that it is less. Measures to be taken in terms of floods: Increasing green areas, houses should not have basements, local governments should not make urbanization near streams, Flood warning procedures should be done, and most importantly, people should be made aware. Settlements for earthquakes should be well positioned. Structures should be built resistant to earthquakes. Most importantly, people should be made aware. Forecasting is the most important method of protection for tsunamis. After an earthquake, the water should be examined. People should be warned against the withdrawal or rise of water. People should go to high places above the sea. As we mentioned, the most important measure to be taken about the epidemic is human awareness. Today's corona epidemic has also increased as a result of people's inability to take precautions and act unconsciously. Since the beginning of 2020, the coronavirus crisis has once again made it clear that not all people are equally affected by crises and disasters – not all are equally vulnerable. Another measure is the course of treatment. Transportation should be provided as soon as possible. In this regard, it leads to the title of access to health, which is examined in the study. If access to health is limited in the country, it can lead to unconscious deaths of people. The inability of people to access health at the time of disaster and under normal conditions is to neglect their vital rights. In this regard, states need to increase hospital capacities and train doctors. In terms of economic independence, a raw material suitable for the countries should be selected, production should start, and the state and people should be made aware. As a result, reducing poverty, increasing access to health, providing economic independence, raising awareness and sustainable policies should be followed. Compared to last year and this year, Congo Dr, Central African Republic, Afghanistan, Chad Iraq countries have increased their risk rates. In detail, Congo Dr Epidemic and disaster rate in terms of access to health were high. The country may have been inadequate in terms of the coronavirus measures that took place in 2019. Measures such as quarantine can be taken by raising people's awareness of their precautions in this area. When examined in terms of Central African Rebuplic, they have the same analysis as Congo Dr. Afghanistan can change the risk ratio with the measures it takes in terms of earthquakes. Access to healthcare, the pandemic and flooding may have increased this rate in Chad. Iraq has a high risk of flooding. The most recent flood on 17.12.2021 caused the death of 8 people. Based on these results, an effect of the increase in risk ratio may be flood disaster. When analyzed in terms of Mali, Mozambique, Nigeria, Yemen, Niger, Ethiopia, the risk ratios decreased in 2022 compared to 2021, but it is not negligible.
+
+# References
+
+https://afad.gov.tr/
+
+https://www.readcube.com/articles/10.4314%2Fjasem.v13i2.55295 [1]
+
+http://www.koeri.boun.edu.tr/sismo/2/tsunami/tarihsel-tsunamiler/turkiyedeki-onemli-tsunamiler
+
+
+https://tr.wikipedia.org
+
+https://drmkc.jrc.ec.europa.eu/inform-index/INFORM-Risk/Results-and-data/moduleId/1782/id/433/controller/Admin/action/Results.
+
+
+https://thinkhazard.org/en/report/170-mozambique/TS
